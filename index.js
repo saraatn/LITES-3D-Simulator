@@ -355,3 +355,41 @@
       });
     }
   }
+
+  // RE-ADDED MISSING FUNCTIONS BELOW
+  function findSceneById(id) {
+    for (var i = 0; i < scenes.length; i++) {
+      if (scenes[i].data.id === id) {
+        return scenes[i];
+      }
+    }
+    return null;
+  }
+
+  var mapDots = document.querySelectorAll('.map-dot');
+  mapDots.forEach(function(dot) {
+    dot.addEventListener('click', function() {
+      var targetSceneId = this.getAttribute('data-scene');
+      var targetScene = findSceneById(targetSceneId);
+      
+      if (targetScene) {
+        switchScene(targetScene);
+      } else {
+        console.warn("Map dot click failed. Scene ID not found: " + targetSceneId);
+      }
+    });
+  });
+
+  function findSceneDataById(id) {
+    for (var i = 0; i < data.scenes.length; i++) {
+      if (data.scenes[i].id === id) {
+        return data.scenes[i];
+      }
+    }
+    return null;
+  }
+
+  // Display the initial scene.
+  switchScene(scenes[0]);
+
+})();
