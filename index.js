@@ -390,3 +390,25 @@
   switchScene(scenes[0]);
 
 })();
+// Initialize map button interactions after Marzipano sets up
+document.addEventListener("DOMContentLoaded", function() {
+  
+  // Find all map dots we created in HTML
+  const mapDots = document.querySelectorAll('.map-dot');
+  
+  mapDots.forEach(dot => {
+    dot.addEventListener('click', function() {
+      const targetSceneId = this.getAttribute('data-scene');
+      
+      // Look through Marzipano's generated scenes array to find the match
+      const targetScene = scenes.find(s => s.data.id === targetSceneId);
+      
+      if (targetScene) {
+        // Use Marzipano's default switchScene function to warp the user
+        switchScene(targetScene);
+      } else {
+        console.warn("Scene ID not found: " + targetSceneId);
+      }
+    });
+  });
+});
