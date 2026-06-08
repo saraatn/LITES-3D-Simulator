@@ -193,15 +193,16 @@
     }
   }
 
-  // Corrected Switch Scene function with transition end safety callback
+  // Optimized Switch Scene function: Fires tracking immediately on station arrival
   function switchScene(scene) {
     stopAutorotate();
     scene.view.setParameters(scene.data.initialViewParameters);
     
-    // DELAYED TIMING FIX: Only runs tracking AFTER visual camera glide completes
-    scene.scene.switchTo(function() {
-      markSceneAsVisited(scene.data.id);
-    });
+    // Switch view panel instantly
+    scene.scene.switchTo();
+    
+    // INSTANT TRACKING FIX: Circle changes color the exact millisecond you land
+    markSceneAsVisited(scene.data.id);
     
     startAutorotate();
     updateSceneName(scene);
