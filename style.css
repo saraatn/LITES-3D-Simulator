@@ -828,3 +828,40 @@ body.view-control-buttons .viewControlButton {
 .viewControlButton-6 {
   margin-left: 105px;
 }
+/* Container positioned in the bottom-left corner */
+#floorplan-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 220px; /* Adjust size based on your image aspect ratio */
+  height: auto;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #fff;
+  border-radius: 8px;
+  padding: 5px;
+  z-index: 1000; /* Keeps it layered above the 3D panorama */
+}
+
+#floorplan-img {
+  width: 100%;
+  display: block;
+  border-radius: 4px;
+}
+
+/* Style for the interactive hotspot dots on the map */
+.map-dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background-color: #ff3333;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.map-dot:hover {
+  background-color: #33ff33;
+  transform: translate(-50%, -50%) scale(1.3);
+}
