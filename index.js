@@ -184,31 +184,50 @@
     return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;');
   }
 
-  // Tracker Logic: ONLY turns red if the user lands on an actual station
+  // Tracker Logic: Safely handles map dot coloring without ever breaking the photo loading thread
   function markSceneAsVisited(sceneId) {
-    // 1. Safe array list of your main station container IDs
-    var validStations = ["0-entrance-1", "2-5", "3-8", "4-10", "5-15"]; 
-    
-    // 2. Only look for a map dot element if the current spot is on our checklist
-    if (validStations.indexOf(sceneId) !== -1) {
-      var activeDot = document.querySelector('.map-dot[data-scene="' + sceneId + '"]');
-      if (activeDot) {
-        activeDot.classList.remove('unvisited');
-        activeDot.classList.add('visited');
+    try {
+      var targetDotId = null;
+      var idString = String(sceneId);
+
+      // Explicitly check if the scene ID contains or matches your specific station keys
+      if (idString.indexOf("entrance-1") !== -1 || idString === "0") {
+        targetDotId = "0-entrance-1";
+      } else if (idString.indexOf("2-5") !== -1 || idString === "5") {
+        targetDotId = "2-5";
+      } else if (idString.indexOf("3-8") !== -1 || idString === "8") {
+        targetDotId = "3-8";
+      } else if (idString.indexOf("4-10") !== -1 || idString === "10") {
+        targetDotId = "4-10";
+      } else if (idString.indexOf("5-15") !== -1 || idString === "15") {
+        targetDotId = "5-15";
       }
+
+      // If a target match was verified, update the DOM safely
+      if (targetDotId) {
+        var activeDot = document.querySelector('.map-dot[data-scene="' + targetDotId + '"]');
+        if (activeDot) {
+          activeDot.classList.remove('unvisited');
+          activeDot.classList.add('visited');
+        }
+      }
+    } catch (err) {
+      console.error("Map tracking error caught safely: ", err);
     }
   }
 
-  // Optimized Switch Scene function: Fires tracking immediately on station arrival
+  // Optimized Switch Scene function
   function switchScene(scene) {
     stopAutorotate();
     scene.view.setParameters(scene.data.initialViewParameters);
     
-    // Switch view panel instantly
+    // Switch the panoramic photo view instantly
     scene.scene.switchTo();
     
-    // Instant conditional check evaluation
-    markSceneAsVisited(scene.data.id);
+    // Process map tracking safely on the next execution cycle
+    setTimeout(function() {
+      markSceneAsVisited(scene.data.id);
+    }, 1);
     
     startAutorotate();
     updateSceneName(scene);
@@ -367,7 +386,6 @@
     }
   }
 
-  // Look through scenes to find matching index properties
   function findSceneById(id) {
     for (var i = 0; i < scenes.length; i++) {
       if (scenes[i].data.id === id) {
@@ -386,7 +404,7 @@
     return null;
   }
 
-  // SCOPE FIX: Map dot interactive listeners placed safely inside the main wrapper execution thread
+  // Map dot interactive click listeners
   var mapDots = document.querySelectorAll('.map-dot');
   mapDots.forEach(function(dot) {
     dot.addEventListener('click', function() {
@@ -402,6 +420,4 @@
   });
 
   // Display the initial scene.
-  switchScene(scenes[0]);
-
-})();
+  switchScene(scenes
