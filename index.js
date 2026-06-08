@@ -151,7 +151,6 @@
     if (el) {
       el.addEventListener('click', function() {
         switchScene(scene);
-        // On mobile, hide scene list after selecting a scene.
         if (document.body.classList.contains('mobile')) {
           hideSceneList();
         }
@@ -184,54 +183,25 @@
     return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;');
   }
 
-  // Tracker Logic: Safely handles map dot coloring without ever breaking the photo loading thread
+  // CORE STATE LOGIC: Turns the map dots solid red permanently
   function markSceneAsVisited(sceneId) {
-    try {
-      var targetDotId = null;
-      var idString = String(sceneId);
-
-      // Explicitly check if the scene ID contains or matches your specific station keys
-      if (idString.indexOf("entrance-1") !== -1 || idString === "0") {
-        targetDotId = "0-entrance-1";
-      } else if (idString.indexOf("2-5") !== -1 || idString === "5") {
-        targetDotId = "2-5";
-      } else if (idString.indexOf("3-8") !== -1 || idString === "8") {
-        targetDotId = "3-8";
-      } else if (idString.indexOf("4-10") !== -1 || idString === "10") {
-        targetDotId = "4-10";
-      } else if (idString.indexOf("5-15") !== -1 || idString === "15") {
-        targetDotId = "5-15";
-      }
-
-      // If a target match was verified, update the DOM safely
-      if (targetDotId) {
-        var activeDot = document.querySelector('.map-dot[data-scene="' + targetDotId + '"]');
-        if (activeDot) {
-          activeDot.classList.remove('unvisited');
-          activeDot.classList.add('visited');
-        }
-      }
-    } catch (err) {
-      console.error("Map tracking error caught safely: ", err);
+    var activeDot = document.querySelector('.map-dot[data-scene="' + sceneId + '"]');
+    if (activeDot) {
+      activeDot.classList.remove('unvisited');
+      activeDot.classList.add('visited');
     }
   }
 
-  // Optimized Switch Scene function
   function switchScene(scene) {
     stopAutorotate();
     scene.view.setParameters(scene.data.initialViewParameters);
-    
-    // Switch the panoramic photo view instantly
     scene.scene.switchTo();
-    
-    // Process map tracking safely on the next execution cycle
-    setTimeout(function() {
-      markSceneAsVisited(scene.data.id);
-    }, 1);
-    
     startAutorotate();
     updateSceneName(scene);
     updateSceneList(scene);
+    
+    // Trigger the red dot color swap every time a scene transition completes!
+    markSceneAsVisited(scene.data.id);
   }
 
   function updateSceneName(scene) {
@@ -404,7 +374,8 @@
     return null;
   }
 
-  // Map dot interactive click listeners
+  // SET UP MAP DOT INTERACTION
+  // This loop runs inside Marzipano context so it safely maps directly to your custom data-scene elements.
   var mapDots = document.querySelectorAll('.map-dot');
   mapDots.forEach(function(dot) {
     dot.addEventListener('click', function() {
@@ -414,10 +385,12 @@
       if (targetScene) {
         switchScene(targetScene);
       } else {
-        console.warn("Scene ID not found: " + targetSceneId);
+        console.warn("Map dot click failed. Scene ID not found: " + targetSceneId);
       }
     });
   });
 
   // Display the initial scene.
-  switchScene(scenes
+  switchScene(scenes[0]);
+
+})();
