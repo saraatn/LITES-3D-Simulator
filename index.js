@@ -151,6 +151,7 @@
     if (el) {
       el.addEventListener('click', function() {
         switchScene(scene);
+        // On mobile, hide scene list after selecting a scene.
         if (document.body.classList.contains('mobile')) {
           hideSceneList();
         }
@@ -183,25 +184,54 @@
     return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;');
   }
 
-  // CORE STATE LOGIC: Turns the map dots solid red permanently
+  // Tracker Logic: Direct matching to ensure ONLY the real stations turn red
   function markSceneAsVisited(sceneId) {
-    var activeDot = document.querySelector('.map-dot[data-scene="' + sceneId + '"]');
-    if (activeDot) {
-      activeDot.classList.remove('unvisited');
-      activeDot.classList.add('visited');
+    try {
+      var targetDotId = null;
+      var idString = String(sceneId);
+
+      // Strict validation routing translation to match your HTML exactly
+      if (idString.indexOf("entrance-1") !== -1 || idString === "0") {
+        targetDotId = "0-entrance-1";
+      } else if (idString.indexOf("2-5") !== -1 || idString === "5") {
+        targetDotId = "2-5";
+      } else if (idString.indexOf("3-8") !== -1 || idString === "8") {
+        targetDotId = "3-8";
+      } else if (idString.indexOf("4-10") !== -1 || idString === "10") {
+        targetDotId = "4-10";
+      } else if (idString.indexOf("5-15") !== -1 || idString === "15") {
+        targetDotId = "5-15";
+      }
+
+      // If it matches a real station, update its class state
+      if (targetDotId) {
+        var activeDot = document.querySelector('.map-dot[data-scene="' + targetDotId + '"]');
+        if (activeDot) {
+          activeDot.classList.remove('unvisited');
+          activeDot.classList.add('visited');
+        }
+      }
+    } catch (err) {
+      console.warn("Tracking update paused safely during image initialization: ", err);
     }
   }
 
+  // Switch Scene function: Forces processing order priority
   function switchScene(scene) {
     stopAutorotate();
     scene.view.setParameters(scene.data.initialViewParameters);
+    
+    // 1. Load and display the panorama file instantly
     scene.scene.switchTo();
+    
+    // 2. Wait 50 milliseconds for the browser to breathe, then check the map dots safely
+    setTimeout(function() {
+      markSceneAsVisited(scene.data.id);
+    }, 50);
+    
     startAutorotate();
     updateSceneName(scene);
     updateSceneList(scene);
-    
-    // Trigger the red dot color swap every time a scene transition completes!
-    markSceneAsVisited(scene.data.id);
   }
 
   function updateSceneName(scene) {
@@ -258,139 +288,3 @@
   }
 
   function createLinkHotspotElement(hotspot) {
-    var wrapper = document.createElement('div');
-    wrapper.classList.add('hotspot');
-    wrapper.classList.add('link-hotspot');
-
-    var icon = document.createElement('img');
-    icon.src = 'img/link.png';
-    icon.classList.add('link-hotspot-icon');
-
-    var transformProperties = [ '-ms-transform', '-webkit-transform', 'transform' ];
-    for (var i = 0; i < transformProperties.length; i++) {
-      var property = transformProperties[i];
-      icon.style[property] = 'rotate(' + hotspot.rotation + 'rad)';
-    }
-
-    wrapper.addEventListener('click', function() {
-      switchScene(findSceneById(hotspot.target));
-    });
-
-    stopTouchAndScrollEventPropagation(wrapper);
-
-    var tooltip = document.createElement('div');
-    tooltip.classList.add('hotspot-tooltip');
-    tooltip.classList.add('link-hotspot-tooltip');
-    tooltip.innerHTML = findSceneDataById(hotspot.target).name;
-
-    wrapper.appendChild(icon);
-    wrapper.appendChild(tooltip);
-
-    return wrapper;
-  }
-
-  function createInfoHotspotElement(hotspot) {
-    var wrapper = document.createElement('div');
-    wrapper.classList.add('hotspot');
-    wrapper.classList.add('info-hotspot');
-
-    var header = document.createElement('div');
-    header.classList.add('info-hotspot-header');
-
-    var iconWrapper = document.createElement('div');
-    iconWrapper.classList.add('info-hotspot-icon-wrapper');
-    var icon = document.createElement('img');
-    icon.src = 'img/info.png';
-    icon.classList.add('info-hotspot-icon');
-    iconWrapper.appendChild(icon);
-
-    var titleWrapper = document.createElement('div');
-    titleWrapper.classList.add('info-hotspot-title-wrapper');
-    var title = document.createElement('div');
-    title.classList.add('info-hotspot-title');
-    title.innerHTML = hotspot.title;
-    titleWrapper.appendChild(title);
-
-    var closeWrapper = document.createElement('div');
-    closeWrapper.classList.add('info-hotspot-close-wrapper');
-    var closeIcon = document.createElement('img');
-    closeIcon.src = 'img/close.png';
-    closeIcon.classList.add('info-hotspot-close-icon');
-    closeWrapper.appendChild(closeIcon);
-
-    header.appendChild(iconWrapper);
-    header.appendChild(titleWrapper);
-    header.appendChild(closeWrapper);
-
-    var text = document.createElement('div');
-    text.classList.add('info-hotspot-text');
-    text.innerHTML = hotspot.text;
-
-    wrapper.appendChild(header);
-    wrapper.appendChild(text);
-
-    var modal = document.createElement('div');
-    modal.innerHTML = wrapper.innerHTML;
-    modal.classList.add('info-hotspot-modal');
-    document.body.appendChild(modal);
-
-    var toggle = function() {
-      wrapper.classList.toggle('visible');
-      modal.classList.toggle('visible');
-    };
-
-    wrapper.querySelector('.info-hotspot-header').addEventListener('click', toggle);
-    modal.querySelector('.info-hotspot-close-wrapper').addEventListener('click', toggle);
-
-    stopTouchAndScrollEventPropagation(wrapper);
-
-    return wrapper;
-  }
-
-  function stopTouchAndScrollEventPropagation(element, eventList) {
-    var eventList = [ 'touchstart', 'touchmove', 'touchend', 'touchcancel', 'wheel', 'mousewheel' ];
-    for (var i = 0; i < eventList.length; i++) {
-      element.addEventListener(eventList[i], function(event) {
-        event.stopPropagation();
-      });
-    }
-  }
-
-  function findSceneById(id) {
-    for (var i = 0; i < scenes.length; i++) {
-      if (scenes[i].data.id === id) {
-        return scenes[i];
-      }
-    }
-    return null;
-  }
-
-  function findSceneDataById(id) {
-    for (var i = 0; i < data.scenes.length; i++) {
-      if (data.scenes[i].id === id) {
-        return data.scenes[i];
-      }
-    }
-    return null;
-  }
-
-  // SET UP MAP DOT INTERACTION
-  // This loop runs inside Marzipano context so it safely maps directly to your custom data-scene elements.
-  var mapDots = document.querySelectorAll('.map-dot');
-  mapDots.forEach(function(dot) {
-    dot.addEventListener('click', function() {
-      var targetSceneId = this.getAttribute('data-scene');
-      var targetScene = findSceneById(targetSceneId);
-      
-      if (targetScene) {
-        switchScene(targetScene);
-      } else {
-        console.warn("Map dot click failed. Scene ID not found: " + targetSceneId);
-      }
-    });
-  });
-
-  // Display the initial scene.
-  switchScene(scenes[0]);
-
-})();
