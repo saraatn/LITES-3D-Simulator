@@ -184,26 +184,14 @@
     return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;');
   }
 
-  // Tracker Logic: Hard-coded mapping to ensure ONLY the real stations turn red
+  // Tracker Logic: ONLY turns red if the user lands on an actual station
   function markSceneAsVisited(sceneId) {
-    var targetDotId = null;
-
-    // Direct routing translation: standardizes varied dataset formatting to match your HTML exactly
-    if (sceneId === "0-entrance-1") { 
-      targetDotId = "0-entrance-1"; 
-    } else if (sceneId === "2-5" || sceneId === "5") { 
-      targetDotId = "2-5"; 
-    } else if (sceneId === "3-8" || sceneId === "8") { 
-      targetDotId = "3-8"; 
-    } else if (sceneId === "4-10" || sceneId === "10") { 
-      targetDotId = "4-10"; 
-    } else if (sceneId === "5-15" || sceneId === "15") { 
-      targetDotId = "5-15"; 
-    }
-
-    // If a confirmed station is matched, change color parameters
-    if (targetDotId) {
-      var activeDot = document.querySelector('.map-dot[data-scene="' + targetDotId + '"]');
+    // 1. Safe array list of your main station container IDs
+    var validStations = ["0-entrance-1", "2-5", "3-8", "4-10", "5-15"]; 
+    
+    // 2. Only look for a map dot element if the current spot is on our checklist
+    if (validStations.indexOf(sceneId) !== -1) {
+      var activeDot = document.querySelector('.map-dot[data-scene="' + sceneId + '"]');
       if (activeDot) {
         activeDot.classList.remove('unvisited');
         activeDot.classList.add('visited');
@@ -211,7 +199,7 @@
     }
   }
 
-  // Optimized Switch Scene function: Fires tracking evaluations immediately on visual load
+  // Optimized Switch Scene function: Fires tracking immediately on station arrival
   function switchScene(scene) {
     stopAutorotate();
     scene.view.setParameters(scene.data.initialViewParameters);
@@ -219,7 +207,7 @@
     // Switch view panel instantly
     scene.scene.switchTo();
     
-    // Evaluates strict position validation
+    // Instant conditional check evaluation
     markSceneAsVisited(scene.data.id);
     
     startAutorotate();
@@ -242,13 +230,11 @@
     }
   }
 
-  // View presentation state controls
   function showSceneList() {
     sceneListElement.classList.add('enabled');
     sceneListToggleElement.classList.add('enabled');
   }
 
-  // View extraction states controls
   function hideSceneList() {
     sceneListElement.classList.remove('enabled');
     sceneListToggleElement.classList.remove('enabled');
@@ -267,7 +253,6 @@
     viewer.setIdleMovement(3000, autorotate);
   }
 
-  // Rotational state parameters breaker
   function stopAutorotate() {
     viewer.stopMovement();
     viewer.setIdleMovement(Infinity);
@@ -382,6 +367,7 @@
     }
   }
 
+  // Look through scenes to find matching index properties
   function findSceneById(id) {
     for (var i = 0; i < scenes.length; i++) {
       if (scenes[i].data.id === id) {
@@ -391,7 +377,6 @@
     return null;
   }
 
-  // Lookup validation references
   function findSceneDataById(id) {
     for (var i = 0; i < data.scenes.length; i++) {
       if (data.scenes[i].id === id) {
